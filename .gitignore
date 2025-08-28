@@ -1,0 +1,4 @@
+.venv
+*.jpeg
+*pt
+/ai/yolo_test/user_secret.json
