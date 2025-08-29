@@ -2,3 +2,5 @@
 *.jpeg
 *pt
 /ai/yolo_test/user_secret.json
+/ai/yolo_test/datasets
+/ai/yolo_test/runs
