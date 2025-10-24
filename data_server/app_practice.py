@@ -6,6 +6,11 @@ app.map = [
     [2,-300,500,300,-500,600,1000],
     [3,-500,200,500,150,1000,50],
 ]
+
+#測試
+@app.route("/hello")
+def hello():
+    return"hello"
 @app.route("/car/capital") #取資料存在table
 def car_capital():
     car_id = request.args.get("id")

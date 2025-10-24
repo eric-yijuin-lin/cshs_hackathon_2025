@@ -1,11 +1,15 @@
 import cv2
 from ultralytics import YOLO
 import requests
+import os
+print(os.getcwd())
 
-model = YOLO("yolov8s.pt")     # 也可改成 yolov8s.pt / m / l / x
+model = YOLO("indoor_GPS.pt")     # 也可改成 yolov8s.pt / m / l / x
 cap = cv2.VideoCapture(0)      # 0=預設攝影機；改成 "video.mp4" 可讀影片檔
-WIDTH  = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-HEIGHT = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # 寬度
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720) # 高度
+WIDTH  = 1280
+HEIGHT = 720
 CENTER_X = WIDTH / 2
 CENTER_Y = HEIGHT / 2
 SLEEP_MS = 1000 # 每隔多少毫秒傳送一次資料
@@ -41,11 +45,23 @@ while True:
         print(f"Detected {label} with confidence {conf:.2f} at ({x1}, {y1}), ({x2}, {y2})")
         
         # 假設我們只對特定類別感興趣，例如 "cell phone"
-        if label == "cell phone" and conf > 0.5:
+        if label == "uc" and conf > 0.5:
             # 計算中心點座標
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
-            update_car_xy(0, cx, cy)
+            update_car_xy(1, cx, cy)
+        elif label == "nc" and conf > 0.5:
+            cx = (x1 + x2) / 2
+            cy = (y1 + y2) / 2
+            update_car_xy(2, cx, cy)
+        elif label == "fc" and conf > 0.5:
+            cx = (x1 + x2) / 2
+            cy = (y1 + y2) / 2
+            update_car_xy(3, cx, cy)
+        elif label == "uc2" and conf > 0.5:
+            cx = (x1 + x2) / 2
+            cy = (y1 + y2) / 2
+            update_car_xy(4, cx, cy)
     tagged_frame = results[0].plot()       # YOLO 幫你畫好框、類別、信心分數
     cv2.imshow("YOLOv8", tagged_frame)
 
