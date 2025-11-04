@@ -43,8 +43,7 @@ while True:
     if button.value() == 0 and not cooldown:  # 按下且沒有冷卻
         print("👆 行人按下按鈕，準備通行")
         
-        response = urequests.get("http://172.20.10.3:5000/button/get?button=turn_on")
-        response = urequests.get("http://172.20.10.3:5000/esp32/name?esp32=1&action=warn2")
+        response = urequests.get("http://172.20.10.3:5000/button/get?button=turn_on&id=uc")
     
         # 綠燈 5 秒
         set_pedestrian(0, 1)
@@ -53,6 +52,9 @@ while True:
             time.sleep(1)
 
         # 回到紅燈
+        
+        response = urequests.get("http://172.20.10.3:5000/button/get?button=turn_off&id=uc")
+        
         set_pedestrian(1, 0)
         print("🚫 紅燈亮，行人停止")
 
@@ -61,8 +63,9 @@ while True:
         last_press_time = now
 
     # 冷卻時間檢查
-    if cooldown and now - last_press_time >= 15:
+    if cooldown and now - last_press_time >= 5:
         cooldown = False
         print("✅ 冷卻結束，可以再次按下按鈕")
 
     time.sleep(0.1)
+
