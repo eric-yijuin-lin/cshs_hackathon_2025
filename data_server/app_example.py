@@ -1,6 +1,9 @@
 from flask import Flask, request
 app = Flask("hackathon server")
 import random
+import cv2
+from time import sleep
+from ultralytics import YOLO
 
 app.cars = [
     # [id, x, y, slow, alarm,direction]
@@ -160,8 +163,21 @@ def car_lucas_text():
                 print(x,y)
                 return str(car[3])
     return "查無此車"
+@app.route("/photo/app_inventor", methods=["POST"])
+def photo_app_inventer():
+    if 'file' not in request.files:
+        return "No file part", 400
+    file = request.files['file']
+    if file.filename == '':
+        return "No selected file", 400
+    data = file.read()
+    image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        return "Invalid image", 400
+    h, w = image.shape[:2]
+    cv2.rectangle(image, (10, 10), (w-10, h-10), (0, 255, 0), 3)
+    return "ok"
    
-
 
 
                 
