@@ -3,7 +3,8 @@ app = Flask("hackathon server")
 import random
 import cv2
 from time import sleep
-from ultralytics import YOLO
+# from ultralytics import YOLO
+import numpy as np
 
 app.cars = [
     # [id, x, y, slow, alarm,direction]
@@ -165,17 +166,28 @@ def car_lucas_text():
     return "查無此車"
 @app.route("/photo/app_inventor", methods=["POST"])
 def photo_app_inventer():
-    if 'file' not in request.files:
-        return "No file part", 400
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
-    data = file.read()
+    data = request.get_data(cache=False, as_text=False)
+    if not data:
+        return "No data received", 400
+    # img = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+
+
+    # if 'file' not in request.files:
+    #     return "No file part", 400
+    # file = request.files['file']
+    # if file.filename == '':
+    #     return "No selected file", 400
+    # data = file.read()
     image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         return "Invalid image", 400
     h, w = image.shape[:2]
     cv2.rectangle(image, (10, 10), (w-10, h-10), (0, 255, 0), 3)
+    cv2.imshow("Received Image", image)
+    cv2.imwrite("received_image.jpg", image)
+    key = cv2.waitKey(1)
+    if key == 27: # 按 Esc 鍵離開
+        cv2.destroyAllWindows()
     return "ok"
    
 
