@@ -5,6 +5,14 @@ import cv2
 from time import sleep
 # from ultralytics import YOLO
 import numpy as np
+from ultralytics import YOLO
+
+
+print("載入模型...")
+model = YOLO("yolov8n.pt")
+names = model.names
+print("OK")
+print("偵測類別:", names)
 
 app.cars = [
     # [id, x, y, slow, alarm,direction]
@@ -166,6 +174,8 @@ def car_lucas_text():
     return "查無此車"
 @app.route("/photo/app_inventor", methods=["POST"])
 def photo_app_inventer():
+
+
     data = request.get_data(cache=False, as_text=False)
     if not data:
         return "No data received", 400
@@ -184,7 +194,15 @@ def photo_app_inventer():
     h, w = image.shape[:2]
     cv2.rectangle(image, (10, 10), (w-10, h-10), (0, 255, 0), 3)
     cv2.imshow("Received Image", image)
-    cv2.imwrite("received_image.jpg", image)
+
+    results = model.predict(
+        image, # 影像
+        conf=0.5, # 信心門檻值
+        iou=0.45, # IoU 門檻值
+    )
+    output = results[0].plot() 
+    
+    cv2.imwrite("output.jpg", output)
     key = cv2.waitKey(1)
     if key == 27: # 按 Esc 鍵離開
         cv2.destroyAllWindows()
