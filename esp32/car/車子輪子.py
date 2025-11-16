@@ -21,10 +21,10 @@ while True:
 
 
 # 腳位設定
-pin_AIA = Pin(21, Pin.OUT)
+pin_AIA = Pin(4, Pin.OUT)
 pin_AIB = Pin(47, Pin.OUT)
 
-pin_BIA = Pin(4, Pin.OUT)
+pin_BIA = Pin(21, Pin.OUT)
 pin_BIB = Pin(14, Pin.OUT)
 
 
