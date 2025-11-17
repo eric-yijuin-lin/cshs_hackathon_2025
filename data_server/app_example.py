@@ -14,6 +14,8 @@ model = YOLO("yolov8n.pt")
 names = model.names
 print("OK")
 print("偵測類別:", names)
+
+app.no_object_count = 0
 app.road_area = [
     ["road_kill_1", Polygon([(182,0),(278,8),(90,341),(4,321)])],
     ["road_kill_2", Polygon([(4,321),(90,341),(338,687),(232,694)])],
@@ -27,17 +29,12 @@ app.road_area = [
 ]
 
 app.cars = [
-    # [id, x, y, slow, alarm,safemode,路段] 0:whale 1:bloss 
-    [0, 0, 0, False, False, True,0], # id 通常要大於 0，這裡我把 id==0 拿來 debug 用
-    ["1", 0, 0, False , False ,True, "road_kill_1"],
-    ["0", 0, 0, False , False ,True, "car_distance"],
+    # [id, x, y, slow, alarm,safemode,路段,people_servo,small_servo] 0:whale 1:bloss 
+    [0, 0, 0, False, False, True,0,False,False], # id 通常要大於 0，這裡我把 id==0 拿來 debug 用
+    ["1", 0, 0, False , 'no',True, "small_1",False,False], 
+    ["0", 0, 0, False , 'no' ,True, "unknown",False,False],
 ]
 #資料庫基本完善↑
-def get_intersection_id(x, y):
-    if 0 <=x <= 100 and 100 <= y <= 500:
-        return "meet"
-    else:
-        return "no_meet"
 #路段要改↓  功能好了但要改數值↑
 app.roads = [
     # [id, [x1, y1], [x2, y2], [x3, y3], [x4, y4]]
@@ -47,11 +44,24 @@ app.roads = [
     ["car_distance",[854,235],[917,325],[748,700],[693,623]],   #車距路
     ["small_1",[378,219],[413,267],[147,447],[113,413]],        #小巷1段
     ["small_2",[154,232],[520,494],[490,539],[113,288]],        #小巷2段
-    ["intersection",[245,305],[296,336],[236,372],[192,338]],   #十字路口
-    ["people",[662,85],[710,0],[854,235],[800,340]],            #行人1段
+    # ["intersection",[245,305],[296,336],[236,372],[192,338]],   #十字路口
+    ["people_1",[662,85],[710,0],[854,235],[800,340]],            #行人1段
     ["people_2",[331,49],[619,10],[662,85],[389,125]],          #行人2段
 ]
-@app.route("/safe_mode")#設定手動模式(預設是on)
+
+def update_all_car_status():
+    car_number = len(app.cars)
+    for i in range(car_number - 1):
+        car1 = app.cars[i]
+        car2 = app.cars[i + 1]
+        if car1[6] == car2[6] and car1[6] != "unknown":
+            distance = ((car1[1] - car2[1])**2 + (car1[2] - car2[2])**2)**0.5
+            if distance < 100:  # 假設安全距離是 100 單位
+                car1[3] = True  # 設定慢速
+                car2[3] = True  # 設定慢速
+                car1[4] = "car_too_close"
+                car2[4] = "car_too_close"
+@app.route("/safe_mode")#設定手動模式(True)(預設是on)
 def safe_mode():
     safemode = request.args.get("safe_mode")
     car_id = request.args.get("id")
@@ -61,7 +71,7 @@ def safe_mode():
                 safemode = True
             else:
                 safemode = False
-            car[4] = safemode
+            car[5] = safemode
 @app.route("/car/update_row") #更新車子所有資訊
 def car_update():
     car_id = request.args.get("id")
@@ -78,89 +88,68 @@ def car_update():
                     car[6] = road_area[0]
             car[1] = x
             car[2] = y
+            update_all_car_status()
             print(f"Updated car {car_id} to position ({x}, {y})in {car[6]}")
             return "ok"
     print("car not found")
     return "car not found"
-
-
-@app.route("/car/status") #查詢車子的狀況 可能會用到
-def car_status():
-    search_id = request.args.get("id")
-    for car in app.cars:
-        if str(car[0]) == search_id:
-            return car
-    return "找不到車子"
-@app.route("/car/update_xy")#只判斷位置 會用到
-def getmap():
-    id = request.args.get("id")
-    x = request.args.get("x")
-    y = request.args.get("y")
-    x = float(x)
-    y = float(y)
-    
-    print(f"[debug] bloss at ({cx}, {cy})")
-    if 600 <=x <= 800 and 100 <= y <= 200:
-        print(f"{id} in area 1&3")
-        return  "you are in area 1&3"
-    elif 600 <=x <= 800 and 300 <= y <= 400:
-        print(f"{id} in area 2&3")
-        return  "you are in area 2&3"
-    elif 500 <=x <= 1000 and 100 <= y <= 200:
-        print(f"{id}in area 1")
-        return  "you are in area 1"
-    elif 500 <=x <= 1000 and 300 <= y <= 400:
-        print(f"{id} in area 2")
-        return  "you are in area 2"
-    elif 600 <=x <= 800 and 50 <= y <= 450:
-        print(f"{id} in area 3")
-        return  "you are in area 3"
-    else:
-        print(f"{id} out of area")
-        return "you are out of area"
 @app.route("/button/get")#行人按鈕被按下 會用到
 def button_get():
     button_status = request.args.get("button")
     car_id = request.args.get("id")
     for car in app.cars:
         if str(car[0]) == car_id:
-            if button_status == "turn_on":
+            if button_status == "turn_on" and car[6]=="people_1" or car[6]=="people_2":
                 car[3] = True
+                car[4] = "people"
+                car[7] = True
                 print("🚶 按鈕被按下，通知車端停車")
             else:
                 car[3] = False
+                car[4] = "no"
+                car[7] = False
     return "請稍後..."
 @app.route("/traffic/state")
 def get_state():
     car_id = request.args.get("id")
     for car in app.cars:
         if str(car[0]) == car_id:
-            return str(car[3])
+            return car
     return "查無此車"
 @app.route("/gps/app_inventor")#app inventor gps更新位置
 def gps_app_inventer():
     car_id = request.args.get("id")
     for car in app.cars:
         if str(car[0]) == car_id:
-            print(f"Received GPS for car {car_id}: ({car[1]}, {car[2]})")
-            return str(car[1:3])     
-@app.route("/road/test")#!!要改
-def car_lucas_text():
-    app.test_index += 1
-    app.test_index = app.test_index % len(app.test_lucas) 
-    x = app.test_lucas[app.test_index][0]
-    y = app.test_lucas[app.test_index][1]
-    # x = request.args.get("x")
-    # y = request.args.get("y")
-    road = get_intersection_id(x, y)
-    if road == "meet":
-        car_id = request.args.get("id")
+            return car
+    return "not found"
+@app.route("/esp32/capture")
+def esp32_capture():
+    object = request.args.get("object")
+    if object == "st" :
         for car in app.cars:
-            if str(car[0]) == car_id:
-                print(x,y)
-                return str(car[3])
-    return "查無此車"
-   
+            if car[6]=="road_kill_1" or car[6]=="road_kill_2":
+                car[3]=True
+                car[4]="road_kill"
+    elif object == "km" or object == "cs":
+        for car in app.cars:
+            if car[6]=="people_1" or car[6]=="people_2":
+                car[3]=True
+                car[4]="people"
+    elif object == "whale" or object == "bloss" :
+        for car in app.cars:
+            if car[6]=="small_1" or car[6]=="small_2":
+                car[3]=True
+                car[4]="small_streetl"
+    else:
+        app.no_object_count += 1
+        if app.no_object_count > 3:
+            for car in app.cars:
+                car[4] = "no"
+    return "ok"
+
+
+  
 
 
 app.run(host="0.0.0.0", port=5000)
