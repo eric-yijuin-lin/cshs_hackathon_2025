@@ -33,11 +33,11 @@ app.road_area = [
 app.cars = [
     # [id, x, y, slow, alarm,safemode,路段,people_servo,small_servo] 0:whale 1:bloss 
     [0, 0, 0, False, False, True,0,False,False], # id 通常要大於 0，這裡我把 id==0 拿來 debug 用
-    ["1", 0, 0, False , 'no',True, "small_1",False,False], 
+    ["1", 0, 0, False , 'no',True, "unknown",False,False], 
     ["0", 0, 0, False , 'no' ,True, "unknown",False,False],
 ]
 #資料庫基本完善↑
-#路段要改↓  功能好了但要改數值↑
+#路段要改↓  
 app.roads = [
     # [id, [x1, y1], [x2, y2], [x3, y3], [x4, y4]]
     ["road_kill_1",[182,0],[278,8],[90,341],[4,321]],           #路殺1段
@@ -46,8 +46,8 @@ app.roads = [
     ["car_distance",[854,235],[917,325],[748,700],[693,623]],   #車距路
     ["small_1",[378,219],[413,267],[147,447],[113,413]],        #小巷1段
     ["small_2",[154,232],[520,494],[490,539],[113,288]],        #小巷2段
-    # ["intersection",[245,305],[296,336],[236,372],[192,338]],   #十字路口
-    ["people_1",[662,85],[710,0],[854,235],[800,340]],            #行人1段
+    # ["intersection",[245,305],[296,336],[236,372],[192,338]], #十字路口
+    ["people_1",[662,85],[710,0],[854,235],[800,340]],          #行人1段
     ["people_2",[331,49],[619,10],[662,85],[389,125]],          #行人2段
 ]
 
@@ -63,7 +63,7 @@ def update_all_car_status():
                 car2[3] = True  # 設定慢速
                 car1[4] = "car_too_close"
                 car2[4] = "car_too_close"
-@app.route("/safe_mode")#設定手動模式(True)(預設是on)
+@app.route("/safe_mode")#設定自動模式(True)(預設是on)
 def safe_mode():
     safemode = request.args.get("safe_mode")
     car_id = request.args.get("id")
@@ -98,18 +98,16 @@ def car_update():
 @app.route("/button/get")#行人按鈕被按下 會用到
 def button_get():
     button_status = request.args.get("button")
-    car_id = request.args.get("id")
     for car in app.cars:
-        if str(car[0]) == car_id:
-            if button_status == "turn_on" and car[6]=="people_1" or car[6]=="people_2":
-                car[3] = True
-                car[4] = "people"
-                car[7] = True
-                print("🚶 按鈕被按下，通知車端停車")
-            else:
-                car[3] = False
-                car[4] = "no"
-                car[7] = False
+        if button_status == "turn_on" and (car[6]=="people_1" or car[6]=="people_2"):
+            car[3] = True
+            car[4] = "people"
+            car[7] = True
+            print("🚶 按鈕被按下，通知車端停車")
+        else:
+            car[3] = False
+            car[4] = "no"
+            car[7] = False
     return "請稍後..."
 @app.route("/traffic/state")
 def get_state():
@@ -133,23 +131,26 @@ def esp32_capture():
             if car[6]=="road_kill_1" or car[6]=="road_kill_2":
                 car[3]=True
                 car[4]="road_kill"
-    elif object == "km" or object == "cs":
-        for car in app.cars:
-            if car[6]=="people_1" or car[6]=="people_2":
-                car[3]=True
-                car[4]="people"
+    # elif object == "km" or object == "cs":
+    #     for car in app.cars:
+    #         if car[6]=="people_1" or car[6]=="people_2":
+    #             car[3]=True
+    #             car[4]="people"
+    #             car[7]=True
     elif object == "whale" or object == "bloss" :
         for car in app.cars:
             if car[6]=="small_1" or car[6]=="small_2":
                 car[3]=True
                 car[4]="small_streetl"
+                car[8]=True
     else:
         app.no_object_count += 1
         if app.no_object_count > 3:
             for car in app.cars:
+                car[3] = False
                 car[4] = "no"
+                car[8] = False
     return "ok"
-
 @app.route("/esp32-upload", methods=["GET", "POST"])
 def test_upload():
     if request.method == "GET":

@@ -14,6 +14,8 @@ wifi.connect(WIFI_SSID, WIFI_PASS)
 while True:
     if wifi .isconnected():
         print("connected")
+        sleep(1)
+        print(wifi.ifconfig())
         break
     else:
         print("...")
@@ -66,9 +68,13 @@ while True:
     break
 
 while True:
-    
+    print("getting http://192.168.0.60:5000/traffic/state?id=1")
     responce = urequests.get("http://192.168.0.60:5000/traffic/state?id=1")
-    if responce[3] == True and responce[5] == False:
+    data_row = responce.json()
+    if responce.status_code != 200:
+        print(responce.status_code)
+        continue
+    elif data_row[3] == True and data_row[5] == True:
         forward(80)
         sleep(1)
         forward(40)
@@ -77,8 +83,3 @@ while True:
         sleep(4)
     else:
         forward(100)
-
-   
-    
-
-
