@@ -1,5 +1,5 @@
 # python ./data_server/app_example.py
-from flask import Flask, request
+from flask import Flask, request, render_template
 app = Flask("hackathon server")
 import random
 import cv2
@@ -8,6 +8,8 @@ from time import sleep
 import numpy as np
 from ultralytics import YOLO
 from shapely.geometry import Point, Polygon
+from pathlib import Path
+from datetime import datetime
 
 print("載入模型...")
 model = YOLO("yolov8n.pt")
@@ -148,7 +150,27 @@ def esp32_capture():
                 car[4] = "no"
     return "ok"
 
+@app.route("/esp32-upload", methods=["GET", "POST"])
+def test_upload():
+    if request.method == "GET":
+        return render_template("test_upload.html")
+    elif request.method == "POST":
+        if "file" not in request.files:
+            print("[debug] /esp32-upload: No file part")
+            return 400, "No file part"
+        file = request.files["file"]
+        if file.filename == "":
+            print("[debug] /esp32-upload: No selected file")
+            return 400, "No selected file"
+        
+        file_prefix = Path(file.filename).stem
+        file_surffix = Path(file.filename).suffix
+        time_str = datetime.now().strftime("%Y-%m-%d %H%M%S")
+        file_name = f"{file_prefix} {time_str}{file_surffix}"
+        full_name = f"C:/Users/user/Documents/temp/{file_name}"
+        file.save(full_name)
 
+        return "image saved"
   
 
 
