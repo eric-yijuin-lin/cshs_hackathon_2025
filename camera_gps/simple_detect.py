@@ -12,7 +12,7 @@ print("OK")
 
 # 載入 YOLO 模型
 print("載入模型...")
-model = YOLO("./camera_gps/web_cam/yolo/best.pt")
+model = YOLO("bloss_and_whale.pt")
 names = model.names
 print("OK")
 print("偵測類別:", names)
@@ -33,25 +33,25 @@ while True:
         sleep(0.5)
         continue
 
-    key = cv2.waitKey(1)
+    cv2.imshow("simple_detect", frame)
+    results = model.predict(
+        source=frame,
+        conf=0.5,
+        iou=0.1,
+        imgsz=800
+    )
+    # 輸出偵測結果
+    r = results[0]
+    detected_frame = r.plot()
+    cv2.imshow("simple_detect", detected_frame)
+
+    key = cv2.waitKey(500)
     if key == 27: # 按 Esc 鍵離開
         break
     elif key == ord('c'): # 按 c 儲存影像
         cv2.imwrite("web_cam.jpg", frame)
         print("已儲存 web_cam.jpg")
-    elif key == ord('d'): # 按 d 進行物件偵測
-        results = model.predict(
-            source=frame,
-            conf=0.8,
-            iou=0.1,
-            imgsz=800
-        )
-        # 輸出偵測結果
-        r = results[0]
-        detected_frame = r.plot()
-        cv2.imshow("YOLO detected", detected_frame)
-        sleep(2)
         
-    cv2.imshow("Web Cam", frame)
+        
 camera.release()
 cv2.destroyAllWindows()

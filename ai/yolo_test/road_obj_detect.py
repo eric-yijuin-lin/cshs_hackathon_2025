@@ -14,11 +14,18 @@ CAMERA_URLS = [
     # 加更多相機就繼續貼
 ]
 
-MODEL_PATH = "yolov8s.pt"  # 換成你的模型
+MODEL_PATH = "bloss_and_whale.pt"  # 換成你的模型
 queue_max = 10          # queue 緩衝，避免塞爆
 frame_queue = Queue(maxsize=queue_max)
 
 model = YOLO(MODEL_PATH)
+names = model.names
+
+def get_class_names(results):
+    box = results[0].boxes[0]
+    index = int(box.cls[0].item())
+    label = names[index]
+    return label
 
 # ======== 攝影機 Thread：抓影像 Producer ========
 
@@ -49,6 +56,18 @@ def yolo_worker():
 
         cv2.imshow(url, frame)
         cv2.imshow(url, output)
+
+        label = "nothing"
+        if len(results[0].boxes):
+            label = get_class_names(results)
+            print(f"從 {url} 偵測到: {label}")
+            # 發送 http 請求到伺服器
+        try:
+            server_url = f"http://192.168.0.60:5000/esp32/capture?object={label}"
+            response = requests.get(server_url, timeout=5)
+        except Exception as e:
+            print(f"⚠️ 發送資料到伺服器失敗: {e}")
+        
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

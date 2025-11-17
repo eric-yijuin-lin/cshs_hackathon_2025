@@ -17,9 +17,9 @@ last_press_time = 0
 def set_pedestrian(red, green):
     led_red.value(red)
     led_green.value(green)
-    
-WIFI_SSID = "iPhone-YJL"
-WIFI_PASS = "12345678"
+                                                                                                                
+WIFI_SSID = "DLINK_6021"
+WIFI_PASS = "cshs1234"
 
 wifi = network.WLAN(network.STA_IF)
 wifi.active(True)
@@ -43,7 +43,7 @@ while True:
     if button.value() == 0 and not cooldown:  # 按下且沒有冷卻
         print("👆 行人按下按鈕，準備通行")
         
-        response = urequests.get("http://172.20.10.3:5000/button/get?button=turn_on&id=uc")
+        response = urequests.get("http://192.168.0.60/button/get?button=turn_on")
     
         # 綠燈 5 秒
         set_pedestrian(0, 1)
@@ -52,9 +52,6 @@ while True:
             time.sleep(1)
 
         # 回到紅燈
-        
-        response = urequests.get("http://172.20.10.3:5000/button/get?button=turn_off&id=uc")
-        
         set_pedestrian(1, 0)
         print("🚫 紅燈亮，行人停止")
 
@@ -63,9 +60,8 @@ while True:
         last_press_time = now
 
     # 冷卻時間檢查
-    if cooldown and now - last_press_time >= 5:
+    if cooldown and now - last_press_time >= 10:
         cooldown = False
         print("✅ 冷卻結束，可以再次按下按鈕")
 
     time.sleep(0.1)
-

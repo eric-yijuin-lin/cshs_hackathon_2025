@@ -11,7 +11,7 @@ def mouse_callback(event, x, y, flags, param):
         print(f"Point {len(points)}: ({x}, {y})")
 
 # ==== 初始化相機 ====
-camera = cv2.VideoCapture(0)  # 改成自己的攝影機編號
+camera = cv2.VideoCapture(1)  # 改成自己的攝影機編號
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
@@ -60,7 +60,7 @@ cv2.destroyWindow("Select Points")
 pts_src = np.float32(points)
 
 # 設定輸出影像的大小
-width, height = 400, 300
+width, height = 1000, 700
 pts_dst = np.float32([
     [0, 0],
     [width - 1, 0],
