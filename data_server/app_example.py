@@ -2,6 +2,7 @@
 from flask import Flask, request, render_template
 app = Flask("hackathon server")
 import random
+print("載入 opencv...")
 import cv2
 from time import sleep
 # from ultralytics import YOLO
@@ -12,10 +13,10 @@ from pathlib import Path
 from datetime import datetime
 
 print("載入模型...")
-model = YOLO("yolov8n.pt")
-names = model.names
-print("OK")
-print("偵測類別:", names)
+STONE_CAT_MODEL = YOLO("stone_cat.pt")
+OTHERS_MODEL = YOLO("bloss_and_whale.pt")
+STONE_CAT_FOLDER = "data_server/detects/stone_cat"
+OTHER_CAR_FOLDER = "data_server/detects/others"
 
 app.no_object_count = 0
 app.road_area = [
@@ -50,6 +51,46 @@ app.roads = [
     ["people_1",[662,85],[710,0],[854,235],[800,340]],          #行人1段
     ["people_2",[331,49],[619,10],[662,85],[389,125]],          #行人2段
 ]
+
+def get_class_label(results, model):
+    names = model.names
+    box = results[0].boxes[0]
+    index = int(box.cls[0].item())
+    label = names[index]
+    return label
+
+def detect_image(source_image, target):
+    if target == "road_stone_cat":
+        model = STONE_CAT_MODEL
+        folder = STONE_CAT_FOLDER
+    elif target == "road_others":
+        model = OTHERS_MODEL
+        folder = OTHER_CAR_FOLDER
+    else:
+        raise Exception("detec image 只收 road_stone_cat 或 road_others")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    filename = f"{folder}/{timestamp}.jpg"
+    results = model.predict(
+        source_image, # 影像
+        conf=0.5, # 信心門檻值
+        iou=0.45, # IoU 門檻值
+    )
+    # 根據偵測結果畫框
+    if len(results[0].boxes) == 0:
+        annotated  = source_image
+        label = "nothing"
+    else:
+        annotated = results[0].plot()
+        label = get_class_label(results, model)
+    # 儲存影像
+    ok = cv2.imwrite(filename, annotated)
+    if ok:
+        print(f"偵測到 {label} 並儲存圖片")
+    else:
+        print("[debug] 儲存影像失敗")
+    return label
+    
 
 def update_all_car_status():
     car_number = len(app.cars)
@@ -123,34 +164,55 @@ def gps_app_inventer():
         if str(car[0]) == car_id:
             return car
     return "not found"
-@app.route("/esp32/capture")
+@app.route("/esp32/capture", methods=["GET", "POST"])
 def esp32_capture():
-    object = request.args.get("object")
-    if object == "st" :
-        for car in app.cars:
-            if car[6]=="road_kill_1" or car[6]=="road_kill_2":
-                car[3]=True
-                car[4]="road_kill"
-    # elif object == "km" or object == "cs":
-    #     for car in app.cars:
-    #         if car[6]=="people_1" or car[6]=="people_2":
-    #             car[3]=True
-    #             car[4]="people"
-    #             car[7]=True
-    elif object == "whale" or object == "bloss" :
-        for car in app.cars:
-            if car[6]=="small_1" or car[6]=="small_2":
-                car[3]=True
-                car[4]="small_streetl"
-                car[8]=True
-    else:
-        app.no_object_count += 1
-        if app.no_object_count > 3:
+    if request.method == "GET":
+        return render_template("test_upload.html")
+    elif request.method == "POST":
+        if "file" not in request.files:
+            print("[debug] /esp32-upload: No file part")
+            return 400, "No file part"
+        
+        file = request.files["file"]
+        if file.filename == "":
+            print("[debug] /esp32-upload: No selected file")
+            return 400, "No selected file"
+        
+        target = request.args.get("target") # 只收 road_stone_cat 跟 road_others
+        img_bytes = file.read() # 讀成 byte 模式資料
+        np_arr = np.frombuffer(img_bytes, np.uint8) # 轉 numpy array (後面轉格式需要)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR) # 轉乘 image (opencv 跟 YOLO 可以吃的)
+        if img is None:
+            print("[debug] /esp32-upload: cv2.imdecode failed")
+            return "Decode error", 400
+
+        # 丟給 YOLO 做偵測
+        object = detect_image(img, target)
+        if object == "st" :
             for car in app.cars:
-                car[3] = False
-                car[4] = "no"
-                car[8] = False
-    return "ok"
+                if car[6]=="road_kill_1" or car[6]=="road_kill_2":
+                    car[3]=True
+                    car[4]="road_kill"
+        # elif object == "km" or object == "cs":
+        #     for car in app.cars:
+        #         if car[6]=="people_1" or car[6]=="people_2":
+        #             car[3]=True
+        #             car[4]="people"
+        #             car[7]=True
+        elif object == "whale" or object == "bloss" :
+            for car in app.cars:
+                if car[6]=="small_1" or car[6]=="small_2":
+                    car[3]=True
+                    car[4]="small_streetl"
+                    car[8]=True
+        else:
+            app.no_object_count += 1
+            if app.no_object_count > 3:
+                for car in app.cars:
+                    car[3] = False
+                    car[4] = "no"
+                    car[8] = False
+        return "ok"
 @app.route("/esp32-upload", methods=["GET", "POST"])
 def test_upload():
     if request.method == "GET":
