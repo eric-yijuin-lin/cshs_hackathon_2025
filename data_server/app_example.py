@@ -34,7 +34,7 @@ app.road_area = [
 app.cars = [
     # [id, x, y, slow, alarm,safemode,路段,people_servo,small_servo] 0:whale 1:bloss 
     ["1", 0, 0, False , 'no',True, "unknown",False,False], 
-    ["0", 0, 0, False , 'no' ,True, "unknown",False,False],
+    ["2", 0, 0, False , 'no' ,True, "unknown",False,False],
 ]
 #資料庫基本完善↑
 #路段要改↓  
