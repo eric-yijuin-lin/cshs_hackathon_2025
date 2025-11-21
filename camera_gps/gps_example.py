@@ -17,9 +17,9 @@ SLEEP_MS = 1000 # 每隔多少毫秒傳送一次資料
 # SERVER = "http://192.168.1.100:5000"
 SERVER = " http://127.0.0.1:5000"
 CALIBRATION_MATRIX = np.array([ # 先跑 perspct_calibrate.py 得到這個矩陣，貼在這下面
- [ 8.41850144e-01, -6.04777403e-03, -1.77551759e+02],
- [-9.98911678e-02,  9.48966094e-01,  8.74047718e+00],
- [-3.04904912e-04,  1.41582656e-05,  1.00000000e+00],
+ [ 8.14059843e-01, -2.26442237e-03, -8.14059843e-01],
+ [-1.52993414e-01,  9.98741009e-01,  1.52993414e-01],
+ [-4.16445342e-04,  3.91222205e-05,  1.00000000e+00],
 ], dtype=np.float32) 
 
 def calibrate_point(point, M):
@@ -76,14 +76,14 @@ while True:
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
             update_car_xy(2, cx, cy)
-        elif label == "fc" and conf > 0.5:
-            cx = (x1 + x2) / 2
-            cy = (y1 + y2) / 2
-            update_car_xy(3, cx, cy)
-        elif label == "uc2" and conf > 0.5:
-            cx = (x1 + x2) / 2
-            cy = (y1 + y2) / 2
-            update_car_xy(4, cx, cy)
+        # elif label == "fc" and conf > 0.5:
+        #     cx = (x1 + x2) / 2
+        #     cy = (y1 + y2) / 2
+        #     update_car_xy(3, cx, cy)
+        # elif label == "uc2" and conf > 0.5:
+        #     cx = (x1 + x2) / 2
+        #     cy = (y1 + y2) / 2
+        #     update_car_xy(4, cx, cy)
     tagged_frame = results[0].plot()       # YOLO 幫你畫好框、類別、信心分數
     cv2.imshow("YOLOv8", tagged_frame)
 

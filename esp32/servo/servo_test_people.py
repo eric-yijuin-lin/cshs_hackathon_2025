@@ -33,7 +33,7 @@ while True:
         continue
     else:
         data_row = responce.json()
-        if data_row[7] == True:
+        if data_row[7] == True: # people servo
             print("轉到 20°")
             servo.write(20)
         else:

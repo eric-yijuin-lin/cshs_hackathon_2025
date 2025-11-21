@@ -25,7 +25,7 @@ app.road_area = [
     ["emergency", Polygon([[265,538],[693,623],[625,698],[302,635]])],
     ["car_distance", Polygon([[854,235],[917,325],[748,700],[693,623]])],
     ["small_1", Polygon([[378,219],[413,267],[296,336],[245,305]])],
-    ["small_2", Polygon([[296,336],[520,494],[490,539],[236,372]])],
+    ["small_2", Polygon([[296,336],[643,582],[603,617],[236,372]])],
     #["intersection", Polygon([[245,305],[296,336],[236,372],[192,338]])],
     ["people_1", Polygon([[662,85],[710,0],[854,235],[800,340]])],
     ["people_2", Polygon([[331,49],[619,10],[662,85],[389,125]])],
@@ -33,7 +33,6 @@ app.road_area = [
 
 app.cars = [
     # [id, x, y, slow, alarm,safemode,路段,people_servo,small_servo] 0:whale 1:bloss 
-    [0, 0, 0, False, False, True,0,False,False], # id 通常要大於 0，這裡我把 id==0 拿來 debug 用
     ["1", 0, 0, False , 'no',True, "unknown",False,False], 
     ["0", 0, 0, False , 'no' ,True, "unknown",False,False],
 ]
@@ -99,11 +98,19 @@ def update_all_car_status():
         car2 = app.cars[i + 1]
         if car1[6] == car2[6] and car1[6] != "unknown":
             distance = ((car1[1] - car2[1])**2 + (car1[2] - car2[2])**2)**0.5
-            if distance < 100:  # 假設安全距離是 100 單位
+            if distance < 300:  # 假設安全距離是 300 單位
                 car1[3] = True  # 設定慢速
                 car2[3] = True  # 設定慢速
                 car1[4] = "car_too_close"
                 car2[4] = "car_too_close"
+        else:
+            if car1[4] == "car_too_close":
+                car1[3] = False  # 取消慢速
+                car1[4] = "no"
+            if car2[4] == "car_too_close":
+                car2[3] = False  # 取消慢速
+                car2[4] = "no"
+
 @app.route("/safe_mode")#設定自動模式(True)(預設是on)
 def safe_mode():
     safemode = request.args.get("safe_mode")
