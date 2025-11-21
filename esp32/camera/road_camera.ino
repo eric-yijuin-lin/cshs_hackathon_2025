@@ -23,6 +23,7 @@
 // ===========================
 const char* ssid     = "DLINK_6021";
 const char* password = "cshs1234";
+const char* target   = "road_stone_cat";
 
 String serverName = "http://192.168.0.56:5000";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
 //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
@@ -167,7 +168,7 @@ void loop() {camera_fb_t * fb = NULL;
     
   String garbageClass = "unknow";
   if(client) {
-    String query = serverName + "/esp32-upload";
+    String query = serverName + "/esp32/capture?target=" + target;
     HTTPClient https;
     Serial.println("[POST] " + query);
     if (https.begin(*client, query)) {

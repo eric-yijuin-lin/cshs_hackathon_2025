@@ -76,14 +76,6 @@ while True:
             cx = (x1 + x2) / 2
             cy = (y1 + y2) / 2
             update_car_xy(2, cx, cy)
-        # elif label == "fc" and conf > 0.5:
-        #     cx = (x1 + x2) / 2
-        #     cy = (y1 + y2) / 2
-        #     update_car_xy(3, cx, cy)
-        # elif label == "uc2" and conf > 0.5:
-        #     cx = (x1 + x2) / 2
-        #     cy = (y1 + y2) / 2
-        #     update_car_xy(4, cx, cy)
     tagged_frame = results[0].plot()       # YOLO 幫你畫好框、類別、信心分數
     cv2.imshow("YOLOv8", tagged_frame)
 
