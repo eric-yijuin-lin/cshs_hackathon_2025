@@ -54,6 +54,7 @@ while True:
         # 回到紅燈
         set_pedestrian(1, 0)
         print("🚫 紅燈亮，行人停止")
+        response = urequests.get("http://192.168.0.60/button/get?button=turn_off")
 
         # 啟動冷卻 15 秒
         cooldown = True
